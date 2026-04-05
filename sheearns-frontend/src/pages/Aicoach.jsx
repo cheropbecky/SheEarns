@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { apiRequest } from "../api";
 
 const suggestions = [
   "What should I charge for braiding in Nairobi?",
@@ -47,29 +48,21 @@ export default function AICoach() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const payload = await apiRequest("/ai/coach", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system:
-            "You are SheEarns AI Coach, a warm and practical business mentor for women monetizing skills in Kenya. Give concise, actionable advice on pricing, getting clients, social media, and service operations. Mention local context like Ksh, M-Pesa, and Kenyan cities when helpful.",
-          messages: [
-            ...messages
-              .filter((m) => m.role !== "ai" || messages.indexOf(m) > 0)
-              .map((m) => ({
-                role: m.role === "ai" ? "assistant" : "user",
-                content: m.text,
-              })),
-            { role: "user", content: userText },
-          ],
+          text: userText,
+          history: messages
+            .filter((m, idx) => !(idx === 0 && m.role === "ai"))
+            .map((m) => ({
+              role: m.role === "ai" ? "assistant" : "user",
+              content: m.text,
+            })),
         }),
       });
 
-      const data = await res.json();
       const reply =
-        data.content?.[0]?.text ||
+        payload?.reply ||
         "I am here to help. Try asking something specific about pricing, offers, or finding clients.";
       setMessages((prev) => [...prev, { role: "ai", text: reply }]);
     } catch {

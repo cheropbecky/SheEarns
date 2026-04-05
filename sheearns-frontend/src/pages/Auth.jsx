@@ -13,17 +13,47 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
+import { apiRequest } from "../api";
 
 export function Login({ onNavigate }) {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    login({ name: "Queen Becky" });
-    onNavigate("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const payload = await apiRequest("/users/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
+
+      login({
+        name: payload?.user?.full_name || "Queen",
+        email: payload?.user?.email || email.trim(),
+        token: payload?.access_token || null,
+      });
+      onNavigate("");
+    } catch (err) {
+      setError(err.message || "Login failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -105,8 +135,14 @@ export function Login({ onNavigate }) {
               </div>
 
               <button type="submit" className="w-full text-white font-bold text-lg py-4 rounded-2xl shadow-lg hover:opacity-90 transition-opacity mt-2 bg-[#500088]">
-                Sign In
+                {submitting ? "Signing In..." : "Sign In"}
               </button>
+
+              {error && (
+                <p className="text-sm text-[#b42318] bg-[#fff0ef] border border-[#ffd1cc] rounded-xl px-4 py-3">
+                  {error}
+                </p>
+              )}
 
               <div className="flex items-center gap-4">
                 <div className="flex-1 h-px bg-[#e6e2dc]" />
@@ -139,11 +175,42 @@ export function Signup({ onNavigate }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    login({ name: name || "Queen" });
-    onNavigate("");
+
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError("Please fill in name, email, and password.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const payload = await apiRequest("/users/register", {
+        method: "POST",
+        body: JSON.stringify({
+          full_name: name.trim(),
+          email: email.trim(),
+          password,
+          location: "Nairobi",
+        }),
+      });
+
+      login({
+        name: payload?.user?.full_name || name.trim(),
+        email: payload?.user?.email || email.trim(),
+        token: payload?.access_token || null,
+      });
+      onNavigate("");
+    } catch (err) {
+      setError(err.message || "Signup failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -227,8 +294,14 @@ export function Signup({ onNavigate }) {
               </div>
 
               <button type="submit" className="w-full text-white font-bold text-base py-4 rounded-2xl shadow-lg hover:opacity-90 transition-opacity bg-[#500088]">
-                Create My Account
+                {submitting ? "Creating Account..." : "Create My Account"}
               </button>
+
+              {error && (
+                <p className="text-sm text-[#b42318] bg-[#fff0ef] border border-[#ffd1cc] rounded-xl px-4 py-3">
+                  {error}
+                </p>
+              )}
 
               <div className="flex items-center gap-4">
                 <div className="flex-1 h-px bg-[#e6e2dc]" />

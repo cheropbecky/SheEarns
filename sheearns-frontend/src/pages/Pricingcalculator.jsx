@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { apiRequest } from "../api";
 import {
   Calculator,
   MapPin,
@@ -95,6 +96,9 @@ export default function PricingCalculator() {
   const [hours, setHours] = useState(2);
   const [experience, setExperience] = useState(2);
   const [urgency, setUrgency] = useState("Standard");
+  const [apiPricing, setApiPricing] = useState(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
 
   const pricing = useMemo(() => {
     const serviceMultiplier = service === "Other (specify)" ? 1.05 : 1;
@@ -109,6 +113,46 @@ export default function PricingCalculator() {
 
     return { estimate, low, high };
   }, [service, location, hours, experience, urgency]);
+
+  const fetchLivePricing = async () => {
+    setApiLoading(true);
+    setApiError("");
+
+    let experienceLevel = "beginner";
+    if (experience >= 5) {
+      experienceLevel = "advanced";
+    } else if (experience >= 2) {
+      experienceLevel = "intermediate";
+    }
+
+    const urgencyValue = urgency === "Standard" ? "normal" : "rush";
+    const serviceName =
+      service === "Other (specify)" ? customService.trim() || "Custom Service" : service;
+
+    try {
+      const payload = await apiRequest("/pricing/calculate", {
+        method: "POST",
+        body: JSON.stringify({
+          service_name: serviceName,
+          location,
+          hours,
+          experience_level: experienceLevel,
+          urgency: urgencyValue,
+          materials_cost: 0,
+        }),
+      });
+      setApiPricing(payload);
+    } catch (err) {
+      setApiError(err.message || "Could not fetch live estimate.");
+      setApiPricing(null);
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  const displayEstimate = apiPricing?.recommended_price ?? pricing.estimate;
+  const displayLow = apiPricing?.starting_price ?? pricing.low;
+  const displayHigh = apiPricing?.premium_price ?? pricing.high;
 
   return (
     <div className="min-h-screen bg-[#fdf9f3] font-['Inter',sans-serif]">
@@ -195,9 +239,35 @@ export default function PricingCalculator() {
 
             <div className="bg-[#f7f3ed] rounded-2xl p-5">
               <p className="text-xs uppercase tracking-widest text-[#4c4452] font-bold">Recommended Price</p>
-              <p className="text-4xl font-extrabold text-[#500088] mt-2">{currency(pricing.estimate)}</p>
-              <p className="text-[#4c4452] mt-2 text-sm">Range: {currency(pricing.low)} - {currency(pricing.high)}</p>
+              <p className="text-4xl font-extrabold text-[#500088] mt-2">{currency(displayEstimate)}</p>
+              <p className="text-[#4c4452] mt-2 text-sm">Range: {currency(displayLow)} - {currency(displayHigh)}</p>
             </div>
+
+            <button
+              type="button"
+              onClick={fetchLivePricing}
+              disabled={apiLoading}
+              className="w-full bg-[#1c1c18] text-white font-bold px-5 py-3 rounded-2xl hover:opacity-90 transition-all duration-200 disabled:opacity-60"
+            >
+              {apiLoading ? "Checking Live API..." : "Use Live Backend Estimate"}
+            </button>
+
+            {apiError && (
+              <p className="text-sm text-[#b42318] bg-[#fff0ef] border border-[#ffd1cc] rounded-xl px-4 py-3">
+                {apiError}
+              </p>
+            )}
+
+            {apiPricing?.notes?.length > 0 && (
+              <div className="bg-[#f7f3ed] rounded-2xl p-4 text-sm text-[#4c4452]">
+                <p className="font-bold text-[#1c1c18]">Live pricing notes</p>
+                <ul className="mt-2 list-disc pl-5 space-y-1">
+                  {apiPricing.notes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="space-y-3 text-sm text-[#4c4452]">
               <p className="inline-flex items-center gap-2"><TrendingUp size={16} strokeWidth={1.5} className="text-[#500088]" /> Better reviews let you charge more over time.</p>
