@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from typing import Annotated
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, status
 
-from models.user import LoginResponse, UserCreate, UserLogin, UserPublic, UserUpdate
+from models.user import (
+	LoginResponse,
+	PasswordChangeRequest,
+	UserCreate,
+	UserLogin,
+	UserPublic,
+	UserUpdate,
+)
 from services.auth_service import create_token, hash_password, verify_password, verify_token
 
 
@@ -25,6 +33,9 @@ def _public_user(user: dict[str, Any]) -> UserPublic:
 		location=user.get("location"),
 		bio=user.get("bio"),
 		avatar_url=user.get("avatar_url"),
+		services=user.get("services", []),
+		notifications_enabled=user.get("notifications_enabled", True),
+		marketing_emails_enabled=user.get("marketing_emails_enabled", False),
 		is_premium=user.get("is_premium", False),
 	)
 
@@ -51,7 +62,7 @@ def _get_user_by_token(token: str | None) -> dict[str, Any]:
 
 @router.post("/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
 def register_user(payload: UserCreate) -> LoginResponse:
-	email = str(payload.email)
+	email = str(payload.email).lower()
 	if email in _users_by_email:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A user with this email already exists")
 
@@ -68,6 +79,9 @@ def register_user(payload: UserCreate) -> LoginResponse:
 		"location": payload.location,
 		"bio": None,
 		"avatar_url": None,
+		"services": [],
+		"notifications_enabled": True,
+		"marketing_emails_enabled": False,
 		"is_premium": False,
 		"token": token,
 	}
@@ -80,7 +94,7 @@ def register_user(payload: UserCreate) -> LoginResponse:
 
 @router.post("/login", response_model=LoginResponse)
 def login_user(payload: UserLogin) -> LoginResponse:
-	user = _users_by_email.get(str(payload.email))
+	user = _users_by_email.get(str(payload.email).lower())
 	if not user or not verify_password(payload.password, user["password_hash"]):
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
@@ -90,14 +104,26 @@ def login_user(payload: UserLogin) -> LoginResponse:
 
 
 @router.get("/me", response_model=UserPublic)
-def get_current_user(authorization: str | None = None) -> UserPublic:
+def get_current_user(authorization: Annotated[str | None, Header()] = None) -> UserPublic:
 	user = _get_user_by_token(authorization)
 	return _public_user(user)
 
 
 @router.put("/me", response_model=UserPublic)
-def update_current_user(payload: UserUpdate, authorization: str | None = None) -> UserPublic:
+def update_current_user(payload: UserUpdate, authorization: Annotated[str | None, Header()] = None) -> UserPublic:
 	user = _get_user_by_token(authorization)
+
+	if payload.email is not None:
+		next_email = str(payload.email).lower()
+		existing = _users_by_email.get(next_email)
+		if existing is not None and existing["id"] != user["id"]:
+			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already in use")
+
+		old_email = user["email"]
+		user["email"] = next_email
+		if old_email != next_email:
+			_users_by_email.pop(old_email, None)
+			_users_by_email[next_email] = user
 
 	if payload.full_name is not None:
 		user["full_name"] = payload.full_name
@@ -109,8 +135,38 @@ def update_current_user(payload: UserUpdate, authorization: str | None = None) -
 		user["bio"] = payload.bio
 	if payload.avatar_url is not None:
 		user["avatar_url"] = payload.avatar_url
+	if payload.services is not None:
+		user["services"] = [service.strip() for service in payload.services if service and service.strip()]
+	if payload.notifications_enabled is not None:
+		user["notifications_enabled"] = payload.notifications_enabled
+	if payload.marketing_emails_enabled is not None:
+		user["marketing_emails_enabled"] = payload.marketing_emails_enabled
 
 	return _public_user(user)
+
+
+@router.post("/me/change-password", status_code=status.HTTP_200_OK)
+def change_current_user_password(
+	payload: PasswordChangeRequest,
+	authorization: Annotated[str | None, Header()] = None,
+) -> dict[str, str]:
+	user = _get_user_by_token(authorization)
+
+	if not verify_password(payload.current_password, user["password_hash"]):
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="Current password is incorrect",
+		)
+
+	if verify_password(payload.new_password, user["password_hash"]):
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="New password must be different from current password",
+		)
+
+	user["password_hash"] = hash_password(payload.new_password)
+
+	return {"message": "Password updated successfully"}
 
 
 @router.get("/{user_id}", response_model=UserPublic)

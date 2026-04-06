@@ -29,6 +29,16 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateUser = (updates) => {
+    setUser((current) => {
+      const base = current || { name: "Queen Becky", avatar: null };
+      return {
+        ...base,
+        ...(typeof updates === "function" ? updates(base) : updates),
+      };
+    });
+  };
+
   useEffect(() => {
     try {
       localStorage.setItem("sheearns_is_logged_in", String(isLoggedIn));
@@ -43,7 +53,7 @@ export function AuthProvider({ children }) {
   }, [isLoggedIn, user]);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

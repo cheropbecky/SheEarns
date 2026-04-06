@@ -9,9 +9,23 @@ function buildUrl(path) {
 }
 
 async function apiRequest(path, options = {}) {
+  let authHeader = {};
+  try {
+    const savedUser = localStorage.getItem("sheearns_user");
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      if (parsed?.token) {
+        authHeader = { Authorization: `Bearer ${parsed.token}` };
+      }
+    }
+  } catch {
+    authHeader = {};
+  }
+
   const response = await fetch(buildUrl(path), {
     headers: {
       "Content-Type": "application/json",
+      ...authHeader,
       ...(options.headers || {}),
     },
     ...options,

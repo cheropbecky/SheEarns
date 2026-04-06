@@ -44,9 +44,14 @@ export function Login({ onNavigate }) {
       });
 
       login({
+        id: payload?.user?.id || null,
         name: payload?.user?.full_name || "Queen",
         email: payload?.user?.email || email.trim(),
         token: payload?.access_token || null,
+        avatar: payload?.user?.avatar_url || null,
+        services: payload?.user?.services || [],
+        notificationsEnabled: payload?.user?.notifications_enabled ?? true,
+        marketingEmailsEnabled: payload?.user?.marketing_emails_enabled ?? false,
       });
       onNavigate("");
     } catch (err) {
@@ -201,9 +206,14 @@ export function Signup({ onNavigate }) {
       });
 
       login({
+        id: payload?.user?.id || null,
         name: payload?.user?.full_name || name.trim(),
         email: payload?.user?.email || email.trim(),
         token: payload?.access_token || null,
+        avatar: payload?.user?.avatar_url || null,
+        services: payload?.user?.services || [],
+        notificationsEnabled: payload?.user?.notifications_enabled ?? true,
+        marketingEmailsEnabled: payload?.user?.marketing_emails_enabled ?? false,
       });
       onNavigate("");
     } catch (err) {

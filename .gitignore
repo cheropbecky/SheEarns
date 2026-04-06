@@ -9,6 +9,7 @@ __pycache__/
 .venv/
 venv/
 .env
+sheearns-backend/.env.example
 
 # Node
 node_modules/

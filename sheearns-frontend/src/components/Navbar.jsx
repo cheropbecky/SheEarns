@@ -78,7 +78,15 @@ export default function Navbar({ active = "" }) {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 bg-[#fea619] text-[#684000] w-10 h-10 rounded-full font-bold text-sm hover:opacity-90 transition-opacity justify-center"
                 >
-                  {user?.name?.charAt(0) || "Q"}
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="Profile"
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    user?.name?.charAt(0) || "Q"
+                  )}
                 </button>
 
                 {dropdownOpen && (

@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import Blog from "./pages/Blog";
 import Roadmap from "./pages/Roadmap";
 import QueenProfile from "./pages/QueenProfile";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import { Login, Signup } from "./pages/Auth";
 
 function NotFound() {
@@ -71,6 +73,8 @@ export default function App() {
     "/aicoach": <AICoach />,
     "/ai-coach": <AICoach />,
     "/dashboard": <Dashboard />,
+    "/profile": <Profile />,
+    "/settings": <Settings />,
     "/roadmap": <Roadmap />,
     "/blog": <Blog />,
     "/login": <Login onNavigate={(to) => {

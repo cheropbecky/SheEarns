@@ -1,3 +1,4 @@
+import json
 from typing import Any, Literal
 
 from fastapi import APIRouter
@@ -8,6 +9,84 @@ from services.pricing_service import calculate_pricing
 
 
 router = APIRouter()
+
+
+def _default_hustles(skills: list[str]) -> list[dict[str, str]]:
+	hustles = [
+		{
+			"name": skill,
+			"earning_potential": "Varies by location and demand",
+			"time_to_first_client": "1-3 weeks",
+			"difficulty": "Beginner to intermediate",
+			"why_fit": "Good match based on your selected skills.",
+		}
+		for skill in skills[:3]
+	]
+
+	if not hustles:
+		hustles = [
+			{
+				"name": "Hair & Beauty",
+				"earning_potential": "Ksh 800 - 5,000 per session",
+				"time_to_first_client": "1-2 weeks",
+				"difficulty": "Beginner friendly",
+				"why_fit": "Strong demand in many local neighborhoods.",
+			}
+		]
+
+	return hustles
+
+
+def _extract_hustles_from_reply(reply_text: str) -> list[dict[str, str]]:
+	cleaned = reply_text.strip()
+	if "```" in cleaned:
+		parts = cleaned.split("```")
+		if len(parts) >= 2:
+			cleaned = parts[1]
+		if cleaned.startswith("json"):
+			cleaned = cleaned[4:].strip()
+
+	parsed = json.loads(cleaned)
+	if not isinstance(parsed, list):
+		raise ValueError("Model response is not a list")
+
+	result: list[dict[str, str]] = []
+	for item in parsed[:3]:
+		if not isinstance(item, dict):
+			continue
+		name = str(item.get("name", "")).strip()
+		earning = str(item.get("earning_potential", "")).strip()
+		time = str(item.get("time_to_first_client", "")).strip()
+		difficulty = str(item.get("difficulty", "")).strip()
+		why_fit = str(item.get("why_fit", "")).strip()
+
+		if earning.isdigit():
+			earning = f"Ksh {earning} / month"
+		if time.isdigit():
+			time = f"{time} week(s)"
+		if difficulty.isdigit():
+			number = int(difficulty)
+			if number <= 4:
+				difficulty = "Beginner"
+			elif number <= 7:
+				difficulty = "Intermediate"
+			else:
+				difficulty = "Advanced"
+		if name and earning and time and difficulty:
+			result.append(
+				{
+					"name": name,
+					"earning_potential": earning,
+					"time_to_first_client": time,
+					"difficulty": difficulty,
+					"why_fit": why_fit,
+				}
+			)
+
+	if not result:
+		raise ValueError("No valid hustle suggestions parsed")
+
+	return result
 
 
 class ChatTurn(BaseModel):
@@ -120,25 +199,33 @@ async def ai_caption(payload: CaptionRequest) -> dict[str, Any]:
 
 @router.post("/assess")
 async def ai_assess(payload: AssessmentRequest) -> dict[str, Any]:
-	hustles = [
-		{
-			"name": skill,
-			"earning_potential": "Varies by location and demand",
-			"time_to_first_client": "1-3 weeks",
-			"difficulty": "Beginner to intermediate",
-		}
-		for skill in payload.skills[:3]
-	]
+	skills_text = ", ".join(payload.skills) if payload.skills else "No skills listed"
+	prompt = (
+		"Create exactly 3 realistic hustle suggestions for a young woman in Kenya. "
+		"Use local context and practical ideas with fast first-client paths.\n"
+		f"Skills: {skills_text}\n"
+		f"Hours per week: {payload.hours_per_week}\n"
+		f"Income goal (KES): {payload.income_goal}\n"
+		f"Work style: {payload.work_style}\n\n"
+		"Return ONLY a JSON array with 3 objects and these keys: "
+		"name, earning_potential, time_to_first_client, difficulty, why_fit."
+	)
 
-	if not hustles:
-		hustles = [
-			{
-				"name": "Hair & Beauty",
-				"earning_potential": "Ksh 800 - 5,000 per session",
-				"time_to_first_client": "1-2 weeks",
-				"difficulty": "Beginner friendly",
-			}
-		]
+	hustles = _default_hustles(payload.skills)
+	try:
+		result = await generate_chat_reply(
+			user_prompt=prompt,
+			system_prompt=(
+				"You are a startup coach for African women founders. "
+				"Respond in valid JSON only when asked."
+			),
+		)
+		reply = str(result.get("reply", ""))
+		if reply:
+			hustles = _extract_hustles_from_reply(reply)
+	except Exception:
+		# Keep graceful fallback if provider is unavailable or malformed.
+		pass
 
 	return {
 		"top_hustles": hustles,

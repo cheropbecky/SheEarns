@@ -12,6 +12,9 @@ class UserBase(BaseModel):
 	location: str | None = None
 	bio: str | None = Field(default=None, max_length=500)
 	avatar_url: str | None = None
+	services: list[str] = Field(default_factory=list)
+	notifications_enabled: bool = True
+	marketing_emails_enabled: bool = False
 
 
 class UserCreate(BaseModel):
@@ -27,12 +30,21 @@ class UserLogin(BaseModel):
 	password: str = Field(..., min_length=1, max_length=128)
 
 
+class PasswordChangeRequest(BaseModel):
+	current_password: str = Field(..., min_length=1, max_length=128)
+	new_password: str = Field(..., min_length=8, max_length=128)
+
+
 class UserUpdate(BaseModel):
+	email: EmailStr | None = None
 	full_name: str | None = Field(default=None, min_length=1, max_length=120)
 	phone: str | None = None
 	location: str | None = None
 	bio: str | None = Field(default=None, max_length=500)
 	avatar_url: str | None = None
+	services: list[str] | None = None
+	notifications_enabled: bool | None = None
+	marketing_emails_enabled: bool | None = None
 
 
 class UserPublic(UserBase):
