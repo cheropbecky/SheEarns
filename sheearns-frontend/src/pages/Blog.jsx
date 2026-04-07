@@ -57,16 +57,23 @@ export default function Blog() {
       <Navbar active="Blog" />
 
       <main>
-        <section className="pt-32 pb-20" data-aos="fade-up">
-          <div className="max-w-[1280px] mx-auto px-6">
+        <section className="pt-32 pb-20 min-h-[280px] relative overflow-hidden" data-aos="fade-up">
+          <img
+            src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1400&q=80&auto=format&fit=crop"
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(80,0,136,0.80)] to-[rgba(80,0,136,0.60)]" />
+          <div className="relative z-10 max-w-[1280px] mx-auto px-6">
             <div className="max-w-[800px] mx-auto text-center" data-aos="fade-up" data-aos-delay="50">
-              <h1 className="font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-[#500088] text-4xl md:text-5xl leading-tight inline-flex items-center justify-center gap-3">
+              <h1 className="font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-white text-4xl md:text-5xl leading-tight inline-flex items-center justify-center gap-3">
                 <span role="img" aria-label="book">
                   📚
                 </span>
                 Real Stories. Real Money. Real Queens.
               </h1>
-              <p className="text-[#4c4452] text-lg mt-5 leading-relaxed">
+              <p className="text-white text-lg mt-5 leading-relaxed">
                 Empowering the modern African woman with the knowledge, skills, and
                 community to turn ambitions into income.
               </p>
@@ -203,6 +210,13 @@ export default function Blog() {
         <section className="py-20" data-aos="fade-up" data-aos-delay="240">
           <div className="max-w-[1280px] mx-auto">
             <div className="mx-6 bg-[#500088] rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1535295972055-1c762f4483e5?w=1400&q=60&auto=format&fit=crop"
+                alt=""
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.15]"
+              />
+              <div className="absolute inset-0 bg-[rgba(80,0,136,0.86)]" />
               <div className="absolute w-48 h-48 rounded-full bg-[rgba(133,83,0,0.15)] -top-12 -right-12 blur-2xl" />
               <div className="absolute w-36 h-36 rounded-full bg-[rgba(107,0,62,0.15)] -bottom-8 -left-8 blur-2xl" />
 

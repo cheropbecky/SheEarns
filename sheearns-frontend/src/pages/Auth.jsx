@@ -15,6 +15,35 @@ import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api";
 
+function getPasswordChecks(value) {
+  return {
+    length: value.length >= 8,
+    upper: /[A-Z]/.test(value),
+    lower: /[a-z]/.test(value),
+    number: /\d/.test(value),
+    symbol: /[^A-Za-z0-9]/.test(value),
+  };
+}
+
+function getPasswordStrength(value) {
+  const checks = getPasswordChecks(value);
+  const score = Object.values(checks).filter(Boolean).length;
+
+  if (!value) {
+    return { score: 0, label: "", color: "bg-[#e6e2dc]", checks };
+  }
+  if (score <= 2) {
+    return { score, label: "Weak", color: "bg-[#dc2626]", checks };
+  }
+  if (score === 3) {
+    return { score, label: "Fair", color: "bg-[#d97706]", checks };
+  }
+  if (score === 4) {
+    return { score, label: "Good", color: "bg-[#2563eb]", checks };
+  }
+  return { score, label: "Strong", color: "bg-[#16a34a]", checks };
+}
+
 export function Login({ onNavigate }) {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -65,7 +94,14 @@ export function Login({ onNavigate }) {
     <>
       <Navbar />
       <div className="min-h-screen pt-24 font-['Inter',sans-serif] flex">
-        <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #500088 0%, #940058 100%)" }}>
+        <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=1200&q=80&auto=format&fit=crop"
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover object-top"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(80,0,136,0.65)] to-[rgba(80,0,136,0.95)]" />
           <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-white opacity-5" />
           <div className="absolute bottom-20 right-10 w-48 h-48 rounded-full bg-white opacity-5" />
           <span className="absolute top-10 left-10 font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-white text-3xl inline-flex items-center gap-2">
@@ -180,14 +216,30 @@ export function Signup({ onNavigate }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const strength = getPasswordStrength(password);
+  const isPasswordStrongEnough = strength.score >= 4;
+  const passwordsMatch = password && confirmPassword && password === confirmPassword;
+  const canSubmit = !!name.trim() && !!email.trim() && isPasswordStrongEnough && passwordsMatch;
 
   const handleSignup = async (e) => {
     e.preventDefault();
 
     if (!name.trim() || !email.trim() || !password.trim()) {
       setError("Please fill in name, email, and password.");
+      return;
+    }
+
+    if (!isPasswordStrongEnough) {
+      setError("Please choose a stronger password before continuing.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match. Please confirm your password.");
       return;
     }
 
@@ -227,7 +279,14 @@ export function Signup({ onNavigate }) {
     <>
       <Navbar />
       <div className="min-h-screen pt-24 font-['Inter',sans-serif] flex">
-        <div className="hidden lg:flex lg:w-3/5 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #940058 0%, #500088 60%, #1a0033 100%)" }}>
+        <div className="hidden lg:flex lg:w-3/5 relative overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1573497019418-b400bb3ab074?w=1200&q=80&auto=format&fit=crop"
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover object-top"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-[rgba(148,0,88,0.70)] to-[rgba(80,0,136,0.90)]" />
           <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-white opacity-5 -translate-y-1/4 translate-x-1/4" />
           <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-white opacity-5 translate-y-1/4 -translate-x-1/4" />
 
@@ -301,9 +360,45 @@ export function Signup({ onNavigate }) {
                   placeholder="••••••••"
                   className="w-full bg-[#f7f3ed] text-[#1c1c18] text-base px-4 py-4 rounded-2xl border-none outline-none focus:ring-2 focus:ring-[#500088] transition-all"
                 />
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-[#4c4452]">Password strength</span>
+                    <span className="text-xs font-semibold text-[#4c4452]">{strength.label || "-"}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-[#e6e2dc] overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-300 ${strength.color}`}
+                      style={{ width: `${(strength.score / 5) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-[#4c4452] mt-2">
+                    Use at least 8 characters with uppercase, lowercase, number, and symbol.
+                  </p>
+                </div>
               </div>
 
-              <button type="submit" className="w-full text-white font-bold text-base py-4 rounded-2xl shadow-lg hover:opacity-90 transition-opacity bg-[#500088]">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[#4c4452] text-sm font-medium">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-[#f7f3ed] text-[#1c1c18] text-base px-4 py-4 rounded-2xl border-none outline-none focus:ring-2 focus:ring-[#500088] transition-all"
+                />
+                {confirmPassword && !passwordsMatch && (
+                  <p className="text-xs text-[#b42318]">Passwords do not match yet.</p>
+                )}
+                {confirmPassword && passwordsMatch && (
+                  <p className="text-xs text-[#166534]">Passwords match.</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting || !canSubmit}
+                className="w-full text-white font-bold text-base py-4 rounded-2xl shadow-lg hover:opacity-90 transition-opacity bg-[#500088] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
                 {submitting ? "Creating Account..." : "Create My Account"}
               </button>
 

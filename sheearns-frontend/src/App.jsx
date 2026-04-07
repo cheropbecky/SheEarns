@@ -61,8 +61,13 @@ export default function App() {
   }, []);
 
   if (route.startsWith("/marketplace/queen/")) {
-    const slug = route.replace("/marketplace/queen/", "");
-    return <QueenProfile slug={slug} />;
+    const legacyId = route.replace("/marketplace/queen/", "");
+    return <QueenProfile serviceId={legacyId} />;
+  }
+
+  if (route.startsWith("/marketplace/service/")) {
+    const serviceId = route.replace("/marketplace/service/", "");
+    return <QueenProfile serviceId={serviceId} />;
   }
 
   const routes = {

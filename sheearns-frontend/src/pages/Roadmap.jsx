@@ -144,13 +144,20 @@ export default function Roadmap() {
       <Navbar active="Roadmap" />
 
       <main className="px-6 pb-20">
-        <section className="pt-32 pb-8" data-aos="fade-down">
-          <div className="max-w-[896px] mx-auto text-center max-w-2xl">
-            <h1 className="font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-[#500088] text-5xl leading-tight inline-flex items-center gap-3 justify-center">
+        <section className="pt-32 pb-8 min-h-[300px] relative overflow-hidden" data-aos="fade-down">
+          <img
+            src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=1400&q=80&auto=format&fit=crop"
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover object-top"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(80,0,136,0.82)] to-[rgba(80,0,136,0.65)]" />
+          <div className="relative z-10 max-w-[896px] mx-auto text-center max-w-2xl">
+            <h1 className="font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-white text-5xl leading-tight inline-flex items-center gap-3 justify-center">
               <Map size={42} strokeWidth={1.8} />
               Your First Client Is Closer Than You Think
             </h1>
-            <p className="text-[#4c4452] text-xl mt-4 leading-relaxed">
+            <p className="text-white text-xl mt-4 leading-relaxed">
               Follow this proven day-by-day roadmap. Every queen who has landed
               her first client followed these exact steps.
             </p>
@@ -309,6 +316,13 @@ export default function Roadmap() {
               className="w-full rounded-3xl relative overflow-hidden p-10"
               style={{ background: "linear-gradient(135deg, #500088, #940058)" }}
             >
+              <img
+                src="https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?w=1200&q=60&auto=format&fit=crop"
+                alt=""
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.15]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[rgba(80,0,136,0.86)] to-[rgba(148,0,88,0.82)]" />
               <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[rgba(254,166,25,0.15)] blur-2xl" />
 
               <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">

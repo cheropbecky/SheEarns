@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { MapPin, Star, BadgeCheck, ShoppingBag, ArrowRight, SearchX } from "lucide-react";
-import { queens, slugifyQueen } from "../data/queens";
+import { apiRequest } from "../api";
 
 const categories = [
   "All",
@@ -28,128 +28,63 @@ const categories = [
   "Tech Support",
 ];
 
-const queenCategories = {
-  "Zawadi M.": "Nail Art",
-  "Amina K.": "Hair & Beauty",
-  "Brenda O.": "Graphic Design",
-  "Faith W.": "Cooking & Catering",
-  "Sandra N.": "Photography",
-  "Cynthia A.": "Tutoring",
-  "Maya L.": "Makeup & MUA",
-  "Joy P.": "Writing & Copywriting",
-  "Winnie T.": "Social Media",
-  "Njeri B.": "Fashion & Tailoring",
-  "Lavender S.": "Virtual Assistant",
-  "Shiko D.": "Fitness & Wellness",
-};
+const marketplaceHeroImage = "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1400&q=60&auto=format&fit=crop";
 
-const categoryServiceLabels = {
-  "Hair & Beauty": "Hair Braiding Specialist",
-  "Nail Art": "Nail Art Technician",
-  "Makeup & MUA": "Makeup Artist",
-  Skincare: "Skincare Consultant",
-  "Fashion & Tailoring": "Tailor & Designer",
-  Photography: "Photographer",
-  "Graphic Design": "Graphic Designer",
-  "Web Design": "Web Designer",
-  "Video Editing": "Video Editor",
-  "Social Media": "Social Media Manager",
-  Tutoring: "Private Tutor",
-  "Fitness & Wellness": "Fitness Coach",
-  "Cooking & Catering": "Meal Prep Chef",
-  "Baking & Pastry": "Baker & Pastry Chef",
-  "Cleaning Services": "Home Cleaning Specialist",
-  "Virtual Assistant": "Virtual Assistant",
-  "Writing & Copywriting": "Content Writer",
-  "Music & Dance": "Music & Dance Coach",
-  "Events Planning": "Events Planner",
-  "Tech Support": "Tech Support Specialist",
-};
+const fallbackAvatar = "https://images.unsplash.com/photo-1544717305-2782549b5136?w=300&q=80&auto=format&fit=crop";
 
-const categoryBasePrices = {
-  "Hair & Beauty": 1200,
-  "Nail Art": 900,
-  "Makeup & MUA": 1800,
-  Skincare: 1500,
-  "Fashion & Tailoring": 2200,
-  Photography: 5000,
-  "Graphic Design": 2500,
-  "Web Design": 4500,
-  "Video Editing": 3500,
-  "Social Media": 3000,
-  Tutoring: 800,
-  "Fitness & Wellness": 1000,
-  "Cooking & Catering": 1700,
-  "Baking & Pastry": 1400,
-  "Cleaning Services": 1200,
-  "Virtual Assistant": 2800,
-  "Writing & Copywriting": 1200,
-  "Music & Dance": 1100,
-  "Events Planning": 4000,
-  "Tech Support": 2000,
-};
-
-const cityLocations = [
-  "Nairobi",
-  "Mombasa",
-  "Kisumu",
-  "Nakuru",
-  "Eldoret",
-  "Thika",
-  "Ruiru",
-  "Kiambu",
-  "Naivasha",
-  "Machakos",
+const queenFallbackAvatars = [
+  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&q=80&auto=format&fit=crop&face",
+  "https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?w=200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1535295972055-1c762f4483e5?w=200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1573497019418-b400bb3ab074?w=200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?w=200&q=80&auto=format&fit=crop",
 ];
 
-const avatarPool = [
-  "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=300&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=300&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=300&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1524502397800-2eeaad7c3fe5?w=300&q=80&auto=format&fit=crop",
-];
-
-const marketplaceHeroImage = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1600&q=80&auto=format&fit=crop";
-
-function parsePriceNumber(priceLabel) {
-  const value = Number((priceLabel || "").replace(/[^0-9]/g, ""));
-  return Number.isFinite(value) ? value : 0;
+function formatPriceRange(min, max) {
+  const safeMin = Number(min || 0);
+  const safeMax = Number(max || 0);
+  if (safeMax > safeMin) {
+    return `Ksh ${safeMin.toLocaleString()} - ${safeMax.toLocaleString()}`;
+  }
+  return `From Ksh ${safeMin.toLocaleString()}`;
 }
 
-function QueenCard({ queen, index }) {
+function ServiceCard({ service, index, onBook }) {
+  const avatar = service.avatar_url || service.avatar || service.portfolio_urls?.[0] || queenFallbackAvatars[index % queenFallbackAvatars.length] || fallbackAvatar;
+
   return (
     <div data-aos="fade-up" data-aos-delay={index * 100} className="bg-white rounded-3xl p-6 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:ring-2 hover:ring-[rgba(80,0,136,0.2)] flex flex-col gap-4">
       <div className="flex items-start justify-between">
-        <img src={queen.avatar} alt={`${queen.name} profile`} loading="lazy" className="w-16 h-16 rounded-2xl object-cover object-center" />
+        <img src={avatar} alt={service.provider_name || "Provider"} loading="lazy" className="w-16 h-16 rounded-2xl object-cover object-top flex-shrink-0" />
         <div className="flex items-center gap-1 bg-[rgba(80,0,136,0.05)] px-2 py-1 rounded-full">
           <Star size={14} strokeWidth={1.5} className="text-[#fea619] fill-[#fea619]" />
-          <span className="text-[#500088] text-sm font-bold">{queen.rating}</span>
-          <span className="text-[#4c4452] text-xs">({queen.reviews})</span>
+          <span className="text-[#500088] text-sm font-bold">{service.rating?.toFixed(1) || "0.0"}</span>
+          <span className="text-[#4c4452] text-xs">({service.review_count || 0})</span>
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <h3 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-[#1c1c18] text-lg">{queen.name}</h3>
-          {queen.verified && <BadgeCheck size={16} strokeWidth={1.5} className="text-[#500088]" />}
+          <h3 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-[#1c1c18] text-lg">{service.provider_name || "SheEarns Queen"}</h3>
+          <BadgeCheck size={16} strokeWidth={1.5} className="text-[#500088]" />
         </div>
-        <p className="text-[#500088] text-sm font-medium">{queen.hustle}</p>
+        <p className="text-[#500088] text-sm font-medium">{service.title}</p>
         <p className="text-[#4c4452] text-sm inline-flex items-center gap-1">
-          <MapPin size={14} strokeWidth={1.5} /> {queen.location}
+          <MapPin size={14} strokeWidth={1.5} /> {service.location}
         </p>
       </div>
 
       <div className="border-t border-[rgba(207,194,212,0.2)] pt-4 flex items-center justify-between">
-        <span className="text-[#500088] font-bold text-base">{queen.price}</span>
+        <span className="text-[#500088] font-bold text-base">{formatPriceRange(service.price_min, service.price_max)}</span>
         <div className="flex gap-2">
-          <a href={`/marketplace/queen/${slugifyQueen(queen.name)}`} className="border border-[#cfc2d4] text-[#1c1c18] text-sm font-medium px-3 py-2 rounded-xl hover:border-[#500088] transition-colors no-underline">
+          <a href={`/marketplace/service/${service.id}`} className="border border-[#cfc2d4] text-[#1c1c18] text-sm font-medium px-3 py-2 rounded-xl hover:border-[#500088] transition-colors no-underline">
             View
           </a>
-          <button className="text-white text-sm font-bold px-4 py-2 rounded-xl hover:opacity-90 transition-all duration-200 active:scale-95" style={{ background: "#500088" }}>
+          <button onClick={() => onBook(service.id)} className="text-white text-sm font-bold px-4 py-2 rounded-xl hover:opacity-90 transition-all duration-200 active:scale-95" style={{ background: "#500088" }}>
             Book
           </button>
         </div>
@@ -164,59 +99,47 @@ export default function Marketplace() {
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
   const [budgetMax, setBudgetMax] = useState(10000);
   const [activeRating, setActiveRating] = useState("All Ratings");
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState("");
 
-  const queensWithCategory = queens.map((queen, idx) => ({
-    ...queen,
-    category: queenCategories[queen.name] || "Tech Support",
-    uid: `${queen.name}-${idx}`,
-  }));
+  useEffect(() => {
+    let cancelled = false;
 
-  const categoryCounts = queensWithCategory.reduce((acc, queen) => {
-    acc[queen.category] = (acc[queen.category] || 0) + 1;
-    return acc;
-  }, {});
-
-  const generatedQueens = [];
-  categories.filter((cat) => cat !== "All").forEach((category, categoryIndex) => {
-    const missing = Math.max(0, 2 - (categoryCounts[category] || 0));
-    for (let i = 0; i < missing; i += 1) {
-      const id = `${category}-${i}`;
-      generatedQueens.push({
-        uid: `generated-${slugifyQueen(id)}`,
-        name: `${categoryServiceLabels[category].split(" ")[0]} Queen ${i + 1}`,
-        hustle: categoryServiceLabels[category],
-        category,
-        location: `${cityLocations[(categoryIndex + i) % cityLocations.length]}, Kenya`,
-        price: `From Ksh ${(categoryBasePrices[category] + i * 400).toLocaleString()}`,
-        rating: Number((4.6 + ((categoryIndex + i) % 4) * 0.1).toFixed(1)),
-        reviews: 12 + categoryIndex * 2 + i,
-        verified: (categoryIndex + i) % 2 === 0,
-        avatar: avatarPool[(categoryIndex + i) % avatarPool.length],
-      });
+    async function loadServices() {
+      setLoading(true);
+      setNotice("");
+      try {
+        const params = new URLSearchParams();
+        if (activeCategory !== "All") params.set("category", activeCategory);
+        if (selectedLocation !== "All Locations") params.set("location", selectedLocation);
+        params.set("max_price", String(budgetMax));
+        const payload = await apiRequest(`/services?${params.toString()}`);
+        if (cancelled) return;
+        setServices(Array.isArray(payload) ? payload : []);
+      } catch (err) {
+        if (cancelled) return;
+        setServices([]);
+        setNotice(err?.message || "Could not load marketplace listings right now.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-  });
 
-  const allMarketplaceQueens = [...queensWithCategory, ...generatedQueens];
+    loadServices();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCategory, selectedLocation, budgetMax]);
 
-  const filteredQueens = activeCategory === "All"
-    ? allMarketplaceQueens
-    : allMarketplaceQueens.filter((q) => q.category === activeCategory);
+  const ratingFilteredServices = useMemo(() => {
+    if (activeRating === "All Ratings") return services;
+    if (activeRating === "5.0") return services.filter((item) => Number(item.rating || 0) >= 5.0);
+    return services.filter((item) => Number(item.rating || 0) >= 4.5);
+  }, [services, activeRating]);
 
-  const locationFilteredQueens = selectedLocation === "All Locations"
-    ? filteredQueens
-    : filteredQueens.filter((q) => q.location.toLowerCase().includes(selectedLocation.toLowerCase()));
-
-  const budgetFilteredQueens = locationFilteredQueens.filter((q) => parsePriceNumber(q.price) <= budgetMax);
-
-  const ratingFilteredQueens = activeRating === "All Ratings"
-    ? budgetFilteredQueens
-    : budgetFilteredQueens.filter((q) => {
-      if (activeRating === "5.0") return q.rating >= 5.0;
-      return q.rating >= 4.5;
-    });
-
-  const visibleQueens = ratingFilteredQueens.slice(0, visibleCount);
-  const hasMore = visibleCount < ratingFilteredQueens.length;
+  const visibleServices = ratingFilteredServices.slice(0, visibleCount);
+  const hasMore = visibleCount < ratingFilteredServices.length;
 
   const handleCategoryChange = (cat) => {
     setActiveCategory(cat);
@@ -238,6 +161,20 @@ export default function Marketplace() {
     setVisibleCount(6);
   };
 
+  const handleBook = async (serviceId) => {
+    try {
+      await apiRequest(`/services/${serviceId}/book`, {
+        method: "POST",
+        body: JSON.stringify({ message: "Hi, I would like to book this service." }),
+      });
+      setNotice("Booking request sent successfully.");
+    } catch (err) {
+      setNotice(err?.message || "Could not create booking request.");
+    }
+
+    window.setTimeout(() => setNotice(""), 2500);
+  };
+
   return (
     <div className="min-h-screen bg-[#fdf9f3] font-['Inter',sans-serif]">
       <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
@@ -246,13 +183,13 @@ export default function Marketplace() {
       <main className="pt-32 pb-24 px-6">
         <div className="max-w-[1280px] mx-auto flex flex-col gap-12">
           <div data-aos="fade-down" className="relative overflow-hidden bg-[#500088] rounded-3xl p-12 flex flex-col gap-4">
-            <img src={marketplaceHeroImage} alt="African women in business" className="absolute inset-0 w-full h-full object-cover object-center" />
-            <div className="absolute inset-0 bg-[#500088] opacity-50" />
+            <img src={marketplaceHeroImage} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[rgba(80,0,136,0.92)] to-[rgba(80,0,136,0.85)]" />
             <div className="absolute -top-10 -right-10 w-64 h-64 rounded-full bg-[rgba(133,83,0,0.15)]" />
             <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-[rgba(107,0,62,0.15)]" />
             <div className="relative z-10">
               <h1 className="font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-white text-5xl lg:text-7xl leading-tight inline-flex items-center gap-3">
-                <ShoppingBag size={44} strokeWidth={1.5} /> Marketplace
+                <ShoppingBag size={44} strokeWidth={1.5} /> Find a Queen. Hire a Queen.
               </h1>
               <p className="text-[#d7a8ff] text-xl mt-4 max-w-[600px]">
                 Browse skilled women near you ready to serve. Every queen on SheEarns is verified and ready to work.
@@ -305,20 +242,20 @@ export default function Marketplace() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleQueens.map((q, i) => (
-              <QueenCard key={q.uid || q.name} queen={q} index={i} />
+            {visibleServices.map((service, i) => (
+              <ServiceCard key={service.id} service={service} index={i} onBook={handleBook} />
             ))}
 
-            {visibleQueens.length === 0 && (
+            {!loading && visibleServices.length === 0 && (
               <div className="col-span-3 flex flex-col items-center gap-4 py-20 text-center">
                 <div className="bg-[rgba(80,0,136,0.06)] w-20 h-20 rounded-full flex items-center justify-center">
                   <SearchX size={32} className="text-[#500088]" />
                 </div>
                 <h3 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-[#1c1c18] text-xl">
-                  No queens in this category yet
+                  No services found for this filter
                 </h3>
                 <p className="text-[#4c4452] text-sm max-w-xs">
-                  Be the first to offer this service on SheEarns!
+                  Try changing location, budget, or category.
                 </p>
                 <a href="/signup" className="bg-[#500088] text-white font-bold text-sm px-6 py-3 rounded-2xl hover:opacity-90 transition-opacity no-underline">
                   Join as a Queen
@@ -326,6 +263,14 @@ export default function Marketplace() {
               </div>
             )}
           </div>
+
+          {loading && (
+            <p className="text-center text-[#4c4452] text-sm">Loading marketplace services...</p>
+          )}
+
+          {notice && (
+            <p className="text-center text-sm text-[#500088] font-semibold">{notice}</p>
+          )}
 
           <div className="flex justify-center">
             {hasMore ? (

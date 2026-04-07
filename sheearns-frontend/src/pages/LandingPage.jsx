@@ -17,7 +17,7 @@ import {
 const imgAmina = "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&q=80&auto=format&fit=crop";
 const imgZawadi = "https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?w=200&q=80&auto=format&fit=crop";
 const imgBrenda = "https://images.unsplash.com/photo-1535295972055-1c762f4483e5?w=200&q=80&auto=format&fit=crop";
-const imgHero = "https://images.unsplash.com/photo-1544717302-de2939b7ef71?w=1200&q=80&auto=format&fit=crop";
+const imgHero = "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=800&q=80&auto=format&fit=crop";
 
 const hustles = [
   { name: "Hair Braiding", rate: "Ksh 1,200 - 5,000", unit: "per style", level: "Beginner Friendly", levelColor: "text-[#855300] bg-[rgba(133,83,0,0.1)]", icon: Crown },
@@ -118,9 +118,7 @@ export default function LandingPage() {
 
           <div data-aos="fade-left" className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-5 max-w-[448px] mx-auto w-full">
             <div className="flex items-center gap-3 pb-4 border-b border-[#f1ede7]">
-              <div className="bg-[#500088] w-10 h-10 rounded-full flex items-center justify-center">
-                <Crown size={18} strokeWidth={1.5} className="text-white" />
-              </div>
+              <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&q=80&auto=format&fit=crop" alt="AI Coach" loading="lazy" className="w-10 h-10 rounded-full object-cover object-top border-2 border-[#fea619]" />
               <div>
                 <p className="font-bold text-[#500088] text-base">SheEarns AI Coach</p>
                 <p className="text-[#855300] text-xs font-bold inline-flex items-center gap-1"><ShieldCheck size={14} strokeWidth={1.5} /> Online</p>
@@ -179,6 +177,8 @@ export default function LandingPage() {
       <section className="py-24 px-6">
         <div className="max-w-[1024px] mx-auto">
           <div data-aos="zoom-in" className="relative rounded-3xl p-20 text-center overflow-hidden shadow-2xl bg-[#500088]">
+            <img src="https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?w=1200&q=60&auto=format&fit=crop" alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover object-center" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[rgba(80,0,136,0.92)] to-[rgba(148,0,88,0.88)]" />
             <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-[rgba(133,83,0,0.1)]" />
             <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-[rgba(107,0,62,0.1)]" />
 

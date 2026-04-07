@@ -1,12 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Award,
-  ClipboardList,
   Star,
-  MessageCircle,
   Flame,
   Wallet,
-  ArrowRight,
   Lock,
   CheckCircle2,
   Bot,
@@ -16,30 +13,43 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
-
-const milestones = [
-  { label: "First Client Landed", sub: "Earned: Ksh 1,200", unlocked: true },
-  { label: "Ksh 5,000 Earned", sub: "Milestone reached", unlocked: true },
-  { label: "First 5-Star Review", sub: "Keep hustling", unlocked: false },
-  { label: "Ksh 10,000 Month", sub: "You are close", unlocked: false },
-  { label: "10 Clients Served", sub: "4 more to go", unlocked: false },
-];
-
-const activities = [
-  { icon: ClipboardList, title: "New Booking: Knotless Braids", sub: "From Mercy Njeri - 2 hours ago", amount: "+Ksh 2,500" },
-  { icon: Star, title: "New 5-Star Review", sub: '"Zawadi is a professional. Highly recommend!"', amount: null },
-  { icon: MessageCircle, title: "Message from Maya", sub: '"Are you available for a quick consult?"', amount: null, unread: true },
-];
+import { apiRequest } from "../api";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [logged, setLogged] = useState("");
-  const [incomeLog, setIncomeLog] = useState([]);
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState("");
-  const incomeInputRef = useRef(null);
-  const goal = 10000;
-  const earned = 6500 + incomeLog.reduce((a, b) => a + b, 0);
-  const progress = Math.min((earned / goal) * 100, 100);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboard() {
+      setLoading(true);
+      try {
+        const payload = await apiRequest("/dashboard");
+        if (cancelled) return;
+        setDashboard(payload);
+      } catch (err) {
+        if (cancelled) return;
+        setActionMessage(err?.message || "Could not load dashboard data right now.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadDashboard();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const summary = dashboard?.summary || { monthly_goal: 10000, earned: 0, remaining: 10000, progress_percent: 0 };
+  const milestones = dashboard?.milestones || [];
+  const activities = dashboard?.recent_activity || [];
+  const goal = Number(summary.monthly_goal || 10000);
+  const earned = Number(summary.earned || 0);
+  const progress = Number(summary.progress_percent || 0);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -80,8 +90,8 @@ export default function Dashboard() {
     }
 
     if (label === "Log Income") {
-      incomeInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      incomeInputRef.current?.focus();
+      window.history.pushState({}, "", "/marketplace");
+      window.dispatchEvent(new PopStateEvent("popstate"));
       return;
     }
 
@@ -155,28 +165,6 @@ export default function Dashboard() {
                     </div>
                     <p className="text-[#4c4452] text-xs text-center">You are {Math.round(progress)}% of the way to your goal.</p>
                   </div>
-
-                  <div className="mt-6 flex gap-3">
-                    <input
-                      ref={incomeInputRef}
-                      type="number"
-                      placeholder="Log new income (Ksh)"
-                      value={logged}
-                      onChange={(e) => setLogged(e.target.value)}
-                      className="flex-1 bg-[#f7f3ed] text-[#1c1c18] text-sm px-4 py-3 rounded-xl border-none outline-none"
-                    />
-                    <button
-                      onClick={() => {
-                        if (logged) {
-                          setIncomeLog((p) => [...p, Number(logged)]);
-                          setLogged("");
-                        }
-                      }}
-                      className="bg-[#500088] text-white font-bold text-sm px-5 py-3 rounded-xl hover:opacity-90 transition-opacity"
-                    >
-                      + Log
-                    </button>
-                  </div>
                 </div>
 
                 <div className="bg-white rounded-3xl p-8 shadow-sm" data-aos="fade-up" data-aos-delay="80">
@@ -189,22 +177,21 @@ export default function Dashboard() {
                     {activities.map((a, i) => (
                       <div key={i} className="flex items-center gap-4 py-4">
                         <div className="bg-[#f1ede7] w-12 h-12 rounded-2xl flex items-center justify-center shrink-0">
-                          <a.icon size={18} strokeWidth={1.8} className="text-[#500088]" />
+                          <Star size={18} strokeWidth={1.8} className="text-[#500088]" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="text-[#1c1c18] font-bold text-sm truncate">{a.title}</p>
-                            {a.unread && <div className="w-2 h-2 bg-[#500088] rounded-full shrink-0" />}
                           </div>
-                          <p className="text-[#4c4452] text-xs truncate">{a.sub}</p>
+                          <p className="text-[#4c4452] text-xs truncate">{a.subtitle}</p>
                         </div>
-                        {a.amount ? (
-                          <span className="text-green-600 font-bold text-sm shrink-0">{a.amount}</span>
-                        ) : (
-                          <ArrowRight size={16} strokeWidth={1.8} className="text-[#500088] shrink-0" />
-                        )}
+                        <span className="text-xs text-[#4c4452] shrink-0">{new Date(a.timestamp).toLocaleDateString()}</span>
                       </div>
                     ))}
+
+                    {!activities.length && (
+                      <p className="text-sm text-[#4c4452] py-4">No recent activity yet.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -235,7 +222,7 @@ export default function Dashboard() {
                 <div className="bg-white rounded-3xl p-6 shadow-sm" data-aos="fade-up" data-aos-delay="80">
                   <div className="flex items-center gap-2 mb-5">
                     <h2 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-[#1c1c18] text-xl">Milestones</h2>
-                    <span className="bg-[rgba(254,166,25,0.15)] text-[#855300] text-xs font-bold px-2 py-0.5 rounded-full">2/5</span>
+                    <span className="bg-[rgba(254,166,25,0.15)] text-[#855300] text-xs font-bold px-2 py-0.5 rounded-full">{milestones.filter((m) => m.unlocked).length}/{milestones.length || 0}</span>
                   </div>
 
                   <div className="flex flex-col gap-4">
@@ -248,12 +235,12 @@ export default function Dashboard() {
                           {m.unlocked ? (
                             <>
                               <p className="text-[#1c1c18] font-bold text-sm">{m.label}</p>
-                              <p className="text-[#4c4452] text-xs">{m.sub}</p>
+                              <p className="text-[#4c4452] text-xs">Target: {m.target}</p>
                             </>
                           ) : (
                             <>
                               <div className="h-4 bg-[#e6e2dc] rounded-full w-3/4 mb-1" />
-                              <p className="text-[#4c4452] text-xs">{m.sub}</p>
+                              <p className="text-[#4c4452] text-xs">Target: {m.target}</p>
                             </>
                           )}
                         </div>
@@ -268,6 +255,35 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            <div className="relative rounded-3xl overflow-hidden p-10 mt-6" data-aos="fade-up" data-aos-delay="120">
+              <img
+                src="https://images.unsplash.com/photo-1573497019418-b400bb3ab074?w=1400&q=80&auto=format&fit=crop"
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover object-center"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[rgba(80,0,136,0.92)] to-[rgba(148,0,88,0.85)]" />
+              <div className="relative z-10 max-w-lg">
+                <span className="bg-[rgba(254,166,25,0.25)] text-[#fea619] text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                  Daily Motivation
+                </span>
+                <p className="text-white font-bold text-2xl mt-3 leading-snug font-['Plus_Jakarta_Sans',sans-serif]">
+                  "The future belongs to those who believe in the beauty of their dreams."
+                </p>
+                <p className="text-[#d7a8ff] text-sm mt-3">
+                  Your profile is getting 20% more views than last week. Keep showing up, Queen!
+                </p>
+                <button
+                  onClick={() => handleQuickAction("Update My Services")}
+                  className="mt-4 bg-[#fea619] text-[#684000] font-bold text-sm px-5 py-2.5 rounded-2xl hover:bg-[#ffb930] transition-colors"
+                >
+                  Update My Services
+                </button>
+              </div>
+            </div>
+
+            {loading && <p className="text-[#4c4452] text-sm">Loading your dashboard...</p>}
           </div>
         </main>
 

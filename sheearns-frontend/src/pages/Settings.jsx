@@ -16,6 +16,27 @@ import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api";
 
+function getPasswordChecks(value) {
+  return {
+    length: value.length >= 8,
+    upper: /[A-Z]/.test(value),
+    lower: /[a-z]/.test(value),
+    number: /\d/.test(value),
+    symbol: /[^A-Za-z0-9]/.test(value),
+  };
+}
+
+function getPasswordStrength(value) {
+  const checks = getPasswordChecks(value);
+  const score = Object.values(checks).filter(Boolean).length;
+
+  if (!value) return { label: "", percent: 0, score, checks, color: "#e6e2dc" };
+  if (score <= 2) return { label: "Weak", percent: 35, score, checks, color: "#dc2626" };
+  if (score <= 3) return { label: "Fair", percent: 60, score, checks, color: "#d97706" };
+  if (score <= 4) return { label: "Good", percent: 80, score, checks, color: "#2563eb" };
+  return { label: "Strong", percent: 100, score, checks, color: "#16a34a" };
+}
+
 export default function Settings() {
   const { user, updateUser, isLoggedIn, logout } = useAuth();
   const [fullName, setFullName] = useState(user?.name || "");
@@ -41,20 +62,10 @@ export default function Settings() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [notice, setNotice] = useState("");
-
-  const passwordStrength = (() => {
-    let score = 0;
-    if (newPassword.length >= 8) score += 1;
-    if (/[A-Z]/.test(newPassword)) score += 1;
-    if (/[0-9]/.test(newPassword)) score += 1;
-    if (/[^A-Za-z0-9]/.test(newPassword)) score += 1;
-    if (newPassword.length >= 12) score += 1;
-
-    if (!newPassword) return { label: "", percent: 0 };
-    if (score <= 2) return { label: "Weak", percent: 35 };
-    if (score <= 4) return { label: "Medium", percent: 70 };
-    return { label: "Strong", percent: 100 };
-  })();
+  const passwordStrength = getPasswordStrength(newPassword);
+  const isPasswordStrongEnough = passwordStrength.score >= 4;
+  const passwordsMatch = !!newPassword && !!confirmPassword && newPassword === confirmPassword;
+  const canChangePassword = !!currentPassword && isPasswordStrongEnough && passwordsMatch;
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -155,8 +166,8 @@ export default function Settings() {
       setNotice("Fill current, new, and confirm password fields.");
       return;
     }
-    if (newPassword.length < 8) {
-      setNotice("New password must be at least 8 characters.");
+    if (!isPasswordStrongEnough) {
+      setNotice("Use a stronger password: 8+ chars, uppercase, lowercase, number, and symbol.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -317,18 +328,32 @@ export default function Settings() {
                     className="h-2 rounded-full transition-all"
                     style={{
                       width: `${passwordStrength.percent}%`,
-                      background: passwordStrength.percent < 50 ? "#dc2626" : passwordStrength.percent < 90 ? "#f59e0b" : "#16a34a",
+                      background: passwordStrength.color,
                     }}
                   />
                 </div>
+                <p className="text-xs text-[#4c4452] mt-2">Use at least 8 characters with uppercase, lowercase, number, and symbol.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs">
+                  <span className={passwordStrength.checks.length ? "text-[#166534]" : "text-[#4c4452]"}>At least 8 characters</span>
+                  <span className={passwordStrength.checks.upper ? "text-[#166534]" : "text-[#4c4452]"}>One uppercase letter</span>
+                  <span className={passwordStrength.checks.lower ? "text-[#166534]" : "text-[#4c4452]"}>One lowercase letter</span>
+                  <span className={passwordStrength.checks.number ? "text-[#166534]" : "text-[#4c4452]"}>One number</span>
+                  <span className={passwordStrength.checks.symbol ? "text-[#166534]" : "text-[#4c4452]"}>One symbol</span>
+                </div>
               </div>
+            )}
+            {confirmPassword && !passwordsMatch && (
+              <p className="text-xs text-[#b42318]">New password and confirm password do not match yet.</p>
+            )}
+            {confirmPassword && passwordsMatch && (
+              <p className="text-xs text-[#166534]">Passwords match.</p>
             )}
             <label className="flex items-center justify-between bg-[#f7f3ed] rounded-xl px-4 py-3">
               <span className="text-sm text-[#1c1c18] inline-flex items-center gap-2"><Shield size={15} className="text-[#500088]" /> Enable 2-factor authentication</span>
               <input type="checkbox" checked={twoFactorEnabled} onChange={(event) => setTwoFactorEnabled(event.target.checked)} />
             </label>
             <div className="flex items-center gap-3">
-              <button onClick={handleChangePassword} disabled={changingPassword} className="bg-[#1c1c18] text-white rounded-xl px-5 py-2.5 font-semibold disabled:opacity-70">
+              <button onClick={handleChangePassword} disabled={changingPassword || !canChangePassword} className="bg-[#1c1c18] text-white rounded-xl px-5 py-2.5 font-semibold disabled:opacity-70 disabled:cursor-not-allowed">
                 {changingPassword ? "Updating password..." : "Change Password"}
               </button>
               <p className="text-xs text-[#4c4452]">Use this button to update password only.</p>

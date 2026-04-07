@@ -31,8 +31,14 @@ const columns = [
 
 export default function Footer() {
   return (
-    <footer className="bg-[#fdf9f3] border-t border-[rgba(207,194,212,0.2)] font-['Inter',sans-serif]">
-      <div className="max-w-[1280px] mx-auto px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
+    <footer className="relative overflow-hidden bg-[#fdf9f3] border-t border-[rgba(207,194,212,0.2)] font-['Inter',sans-serif]">
+      <img
+        src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=1400&q=40&auto=format&fit=crop"
+        alt=""
+        loading="lazy"
+        className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.03]"
+      />
+      <div className="relative z-10 max-w-[1280px] mx-auto px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
         <div className="flex flex-col gap-4">
           <h4 className="font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-2xl text-[#500088]">SheEarns</h4>
           <p className="text-[#4c4452] text-sm leading-relaxed">
@@ -61,7 +67,7 @@ export default function Footer() {
         ))}
       </div>
 
-      <div className="max-w-[1280px] mx-auto px-8 py-5 border-t border-[rgba(207,194,212,0.2)] flex flex-col md:flex-row gap-2 md:items-center md:justify-between text-sm text-[#4c4452]">
+      <div className="relative z-10 max-w-[1280px] mx-auto px-8 py-5 border-t border-[rgba(207,194,212,0.2)] flex flex-col md:flex-row gap-2 md:items-center md:justify-between text-sm text-[#4c4452]">
         <p>Built for women building income, one hustle at a time. © 2026 SheEarns</p>
         <p className="text-[rgba(76,68,82,0.7)]">Designed in Nairobi</p>
       </div>

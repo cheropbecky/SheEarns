@@ -6,6 +6,28 @@ import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../api";
 
 const defaultServices = ["Hair Braiding", "Home Service Styling"];
+const marketplaceCategories = [
+  "Hair & Beauty",
+  "Nail Art",
+  "Makeup & MUA",
+  "Skincare",
+  "Fashion & Tailoring",
+  "Photography",
+  "Graphic Design",
+  "Web Design",
+  "Video Editing",
+  "Social Media",
+  "Tutoring",
+  "Fitness & Wellness",
+  "Cooking & Catering",
+  "Baking & Pastry",
+  "Cleaning Services",
+  "Virtual Assistant",
+  "Writing & Copywriting",
+  "Music & Dance",
+  "Events Planning",
+  "Tech Support",
+];
 
 export default function Profile() {
   const { user, updateUser, isLoggedIn } = useAuth();
@@ -13,7 +35,15 @@ export default function Profile() {
   const [servicesDraft, setServicesDraft] = useState(user?.services || defaultServices);
   const [avatarDraft, setAvatarDraft] = useState(user?.avatar || "");
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [notice, setNotice] = useState("");
+  const [listingTitle, setListingTitle] = useState("");
+  const [listingCategory, setListingCategory] = useState("Hair & Beauty");
+  const [listingDescription, setListingDescription] = useState("");
+  const [listingLocation, setListingLocation] = useState(user?.location || "Nairobi");
+  const [listingMinPrice, setListingMinPrice] = useState(1000);
+  const [listingMaxPrice, setListingMaxPrice] = useState(3000);
+  const [portfolioUrlsText, setPortfolioUrlsText] = useState("");
   const services = useMemo(() => servicesDraft, [servicesDraft]);
 
   useEffect(() => {
@@ -37,6 +67,7 @@ export default function Profile() {
         updateUser(mapped);
         setAvatarDraft(mapped.avatar || "");
         setServicesDraft(mapped.services.length ? mapped.services : defaultServices);
+        setListingLocation(payload?.location || user?.location || "Nairobi");
       } catch {
         // Keep local state if backend fetch fails.
       }
@@ -103,6 +134,59 @@ export default function Profile() {
     } finally {
       setSaving(false);
       window.setTimeout(() => setNotice(""), 3000);
+    }
+  };
+
+  const handlePublishListing = async () => {
+    if (!listingTitle.trim() || !listingDescription.trim() || !listingLocation.trim()) {
+      setNotice("Please fill title, description, and location before publishing.");
+      return;
+    }
+
+    if (Number(listingMinPrice) <= 0 || Number(listingMaxPrice) <= 0) {
+      setNotice("Please set valid prices greater than zero.");
+      return;
+    }
+
+    if (Number(listingMinPrice) > Number(listingMaxPrice)) {
+      setNotice("Minimum price cannot be greater than maximum price.");
+      return;
+    }
+
+    setPublishing(true);
+    setNotice("");
+
+    try {
+      const portfolioUrls = portfolioUrlsText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      await apiRequest("/services", {
+        method: "POST",
+        body: JSON.stringify({
+          title: listingTitle.trim(),
+          category: listingCategory,
+          description: listingDescription.trim(),
+          price_min: Number(listingMinPrice),
+          price_max: Number(listingMaxPrice),
+          location: listingLocation.trim(),
+          portfolio_urls: portfolioUrls,
+        }),
+      });
+
+      setNotice("Listing published. You can now find yourself in Marketplace.");
+      setListingTitle("");
+      setListingDescription("");
+      setPortfolioUrlsText("");
+      window.setTimeout(() => {
+        window.history.pushState({}, "", "/marketplace");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }, 700);
+    } catch (err) {
+      setNotice(err?.message || "Could not publish listing right now.");
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -180,6 +264,80 @@ export default function Profile() {
                 <Save size={16} /> {saving ? "Saving..." : "Save Profile"}
               </button>
               {notice && <span className="text-sm font-semibold text-[#500088]">{notice}</span>}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-[rgba(207,194,212,0.35)]">
+              <h3 className="font-['Plus_Jakarta_Sans',sans-serif] text-xl font-bold text-[#1c1c18] mb-2">Publish Marketplace Listing</h3>
+              <p className="text-[#4c4452] text-sm mb-4">This creates a real listing in the marketplace database. Portfolio is for examples of your work, separate from your profile photo.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <input
+                  type="text"
+                  value={listingTitle}
+                  onChange={(event) => setListingTitle(event.target.value)}
+                  placeholder="Service title (e.g. Bridal Makeup Artist)"
+                  className="bg-[#f7f3ed] rounded-xl px-4 py-3 outline-none"
+                />
+                <select
+                  value={listingCategory}
+                  onChange={(event) => setListingCategory(event.target.value)}
+                  className="bg-[#f7f3ed] rounded-xl px-4 py-3 outline-none"
+                >
+                  {marketplaceCategories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+
+              <textarea
+                value={listingDescription}
+                onChange={(event) => setListingDescription(event.target.value)}
+                placeholder="Describe what clients get when they book you"
+                className="w-full bg-[#f7f3ed] rounded-xl px-4 py-3 outline-none min-h-24"
+              />
+
+              <textarea
+                value={portfolioUrlsText}
+                onChange={(event) => setPortfolioUrlsText(event.target.value)}
+                placeholder="Portfolio image URLs (one per line, optional)"
+                className="w-full bg-[#f7f3ed] rounded-xl px-4 py-3 outline-none min-h-20 mt-3"
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                <input
+                  type="text"
+                  value={listingLocation}
+                  onChange={(event) => setListingLocation(event.target.value)}
+                  placeholder="Location"
+                  className="bg-[#f7f3ed] rounded-xl px-4 py-3 outline-none"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={listingMinPrice}
+                  onChange={(event) => setListingMinPrice(event.target.value)}
+                  placeholder="Min price"
+                  className="bg-[#f7f3ed] rounded-xl px-4 py-3 outline-none"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={listingMaxPrice}
+                  onChange={(event) => setListingMaxPrice(event.target.value)}
+                  placeholder="Max price"
+                  className="bg-[#f7f3ed] rounded-xl px-4 py-3 outline-none"
+                />
+              </div>
+
+              <div className="mt-4">
+                <button
+                  onClick={handlePublishListing}
+                  disabled={publishing}
+                  className="bg-[#1c1c18] text-white rounded-xl px-5 py-3 font-bold disabled:opacity-70"
+                >
+                  {publishing ? "Publishing..." : "Publish to Marketplace"}
+                </button>
+              </div>
             </div>
           </section>
         </div>

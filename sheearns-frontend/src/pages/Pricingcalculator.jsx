@@ -155,10 +155,16 @@ export default function PricingCalculator() {
   const displayHigh = apiPricing?.premium_price ?? pricing.high;
 
   return (
-    <div className="min-h-screen bg-[#fdf9f3] font-['Inter',sans-serif]">
+    <div className="relative overflow-hidden min-h-screen bg-[#fdf9f3] font-['Inter',sans-serif]">
+      <img
+        src="https://images.unsplash.com/photo-1573497019418-b400bb3ab074?w=1600&q=40&auto=format&fit=crop"
+        alt=""
+        loading="lazy"
+        className="absolute inset-0 w-full h-full object-cover object-center opacity-[0.04]"
+      />
       <Navbar active="Pricing" isLoggedIn={false} />
 
-      <main className="pt-32 pb-24 px-6">
+      <main className="relative z-10 pt-32 pb-24 px-6">
         <div className="max-w-[1160px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
           <section data-aos="fade-up" className="lg:col-span-2 bg-white rounded-3xl p-8 shadow-sm">
             <h1 className="font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-4xl text-[#500088] inline-flex items-center gap-3">
@@ -232,7 +238,15 @@ export default function PricingCalculator() {
             </p>
           </section>
 
-          <aside data-aos="fade-left" className="bg-white rounded-3xl p-8 shadow-sm flex flex-col gap-6">
+          <aside data-aos="fade-left" className="relative rounded-3xl overflow-hidden p-8 shadow-sm flex flex-col gap-6">
+            <img
+              src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80&auto=format&fit=crop"
+              alt=""
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover object-top"
+            />
+            <div className="absolute inset-0 bg-[rgba(255,255,255,0.92)]" />
+            <div className="relative z-10 flex flex-col gap-6">
             <h2 className="font-['Plus_Jakarta_Sans',sans-serif] font-extrabold text-2xl text-[#500088] inline-flex items-center gap-2">
               <Target size={24} strokeWidth={1.5} /> Your Estimate
             </h2>
@@ -282,6 +296,7 @@ export default function PricingCalculator() {
             {service === "Other (specify)" && customService.trim() && (
               <p className="text-xs text-[#4c4452]">Custom service captured: <span className="font-semibold text-[#1c1c18]">{customService.trim()}</span></p>
             )}
+            </div>
           </aside>
         </div>
       </main>

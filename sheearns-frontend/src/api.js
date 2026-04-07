@@ -1,6 +1,32 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() || "http://127.0.0.1:8000";
 
+function extractErrorMessage(payload) {
+  if (!payload) {
+    return "Request failed";
+  }
+
+  if (typeof payload?.detail === "string" && payload.detail.trim()) {
+    return payload.detail;
+  }
+
+  if (Array.isArray(payload?.detail)) {
+    const details = payload.detail
+      .map((item) => item?.msg || item?.message)
+      .filter(Boolean)
+      .join(" ");
+    if (details) {
+      return details;
+    }
+  }
+
+  if (typeof payload?.message === "string" && payload.message.trim()) {
+    return payload.message;
+  }
+
+  return "Request failed";
+}
+
 function buildUrl(path) {
   if (!path.startsWith("/")) {
     return `${API_BASE_URL}/${path}`;
@@ -39,7 +65,7 @@ async function apiRequest(path, options = {}) {
   }
 
   if (!response.ok) {
-    const message = payload?.detail || payload?.message || "Request failed";
+    const message = extractErrorMessage(payload);
     throw new Error(message);
   }
 

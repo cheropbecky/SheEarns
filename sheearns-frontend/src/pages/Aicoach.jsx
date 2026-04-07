@@ -94,6 +94,20 @@ export default function AICoach() {
             Ask about pricing, clients, social media, and difficult customer situations.
           </p>
 
+          <div className="relative rounded-3xl overflow-hidden h-56 mt-1">
+            <img
+              src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&q=80&auto=format&fit=crop"
+              alt="African woman entrepreneur"
+              className="w-full h-full object-cover object-top"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#500088] via-[rgba(80,0,136,0.3)] to-transparent" />
+            <div className="absolute bottom-4 left-4 z-10">
+              <p className="text-white font-bold text-sm">Available 24/7 for you</p>
+              <p className="text-[#d7a8ff] text-xs">Ask me anything about your hustle</p>
+            </div>
+          </div>
+
           <div className="bg-white border border-[rgba(207,194,212,0.3)] rounded-2xl p-6 flex flex-col gap-4">
             <p className="text-[#1c1c18] text-sm font-bold">Advice Topics</p>
             <div className="flex flex-wrap gap-2">
@@ -114,9 +128,12 @@ export default function AICoach() {
         <div className="flex-1 flex flex-col bg-white rounded-3xl shadow-sm border border-[rgba(207,194,212,0.2)] overflow-hidden" style={{ minHeight: "600px", maxHeight: "80vh" }} data-aos="fade-left">
           <div className="flex items-center gap-3 px-6 py-4 border-b border-[#f1ede7]">
             <div className="relative">
-              <div className="bg-[#500088] w-12 h-12 rounded-full flex items-center justify-center">
-                <Bot size={22} strokeWidth={1.8} className="text-white" />
-              </div>
+              <img
+                src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&q=80&auto=format&fit=crop"
+                alt="AI Coach"
+                className="w-12 h-12 rounded-full object-cover object-top border-2 border-[#fea619]"
+                loading="lazy"
+              />
               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-400 rounded-full border-2 border-white" />
             </div>
             <div>
